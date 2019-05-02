@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from contextlib import contextmanager
 import argparse
 from gzip import open as gzopen
 import json
@@ -7,17 +8,20 @@ import sys
 from tempfile import NamedTemporaryFile
 
 
+@contextmanager
 def myopen(filename, mode):
     if mode not in ('r', 'w'):
         raise ValueError('invalid mode "{}"'.format(mode))
     if filename in ['-', None]:
         filehandle = sys.stdin if mode == 'r' else sys.stdout
-        return filehandle
-    openfunc = open
-    if filename.endswith('.gz'):
-        openfunc = gzopen
-        mode += 't'
-    return openfunc(filename, mode)
+        yield filehandle
+    else:
+        openfunc = open
+        if filename.endswith('.gz'):
+            openfunc = gzopen
+            mode += 't'
+        with openfunc(filename, mode) as handle:
+            yield handle
 
 
 def cli():
